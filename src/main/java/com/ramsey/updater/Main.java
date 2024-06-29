@@ -1,18 +1,15 @@
-package com.ramsey.modpackupdater;
+package com.ramsey.updater;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 
 @Mod(Main.MODID)
 public class Main {
-    public static final String MODID = "examplemod";
+    public static final String MODID = "updater";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public Main() {

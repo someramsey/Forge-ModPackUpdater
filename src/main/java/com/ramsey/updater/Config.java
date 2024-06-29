@@ -1,4 +1,4 @@
-package com.ramsey.modpackupdater;
+package com.ramsey.updater;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
