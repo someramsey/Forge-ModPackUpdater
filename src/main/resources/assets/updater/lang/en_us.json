@@ -1,3 +1,4 @@
 {
-  "item.updater.update_available": "Update available",
+  "gui.updater.title": "Update",
+  "gui.updater.update_available": "There is a new version of this modpack available. Click download to continue."
 }
