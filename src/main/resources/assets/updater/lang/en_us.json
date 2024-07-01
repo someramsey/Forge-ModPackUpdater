@@ -1,4 +1,6 @@
 {
-  "gui.updater.title": "Update",
-  "gui.updater.update_available": "There is a new version of this modpack available. Click download to continue."
+  "gui.updater.title": "Update Available",
+  "gui.updater.message": "There is a new version of this modpack available. Click confirm to start the download.",
+  "gui.updater.confirm": "Confirm",
+  "gui.updater.cancel": "Cancel"
 }
