@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,11 +47,11 @@ public class DownloadHandler {
                     out.write(buffer, 0, bytesRead);
                     totalBytesRead += bytesRead;
 
-                    downloadScreen.updateProgress("(" + totalBytesRead + " / " + fileSize + ")");
+                    downloadScreen.updateProgress(totalBytesRead, fileSize);
                 }
             }
         } catch (Exception exception) {
-            downloadScreen.displayError(exception.getMessage());
+            downloadScreen.displayError(exception.getLocalizedMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
             Main.LOGGER.error("Failed to download the file", exception);
         }
     }
