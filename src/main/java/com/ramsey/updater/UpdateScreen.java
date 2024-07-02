@@ -70,7 +70,7 @@ public class UpdateScreen extends Screen {
             case ERROR -> downloadFailedMessage;
             case PREPARING -> preparingMessage;
             case DONE -> downloadCompletedMessage;
-            case WORKING -> Component.empty().append(updatingMessage).append(" ").append(details);
+            case WORKING -> Component.literal(details);
         };
     }
 

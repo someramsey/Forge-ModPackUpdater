@@ -13,6 +13,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -28,6 +29,7 @@ public abstract class UpdateHandler {
 
             String latestVersion = Config.LatestVersion.get();
             requiresUpdate = !latestVersion.equals(versionInfo.version());
+            Main.LOGGER.info("Requires update: " + requiresUpdate);
         } catch (IOException exception) {
             Main.LOGGER.error("Failed to check for update", exception);
         }
@@ -37,8 +39,13 @@ public abstract class UpdateHandler {
         executor.submit(() -> {
             try {
                 download(updateScreen);
+                updateScreen.updateComplete();
             } catch (IOException exception) {
                 Main.LOGGER.error("Update failed", exception);
+
+                updateScreen.displayError("Update failed (" + exception.getClass().getName() + ") " +
+                    exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace())
+                );
             }
         });
     }

@@ -25,15 +25,17 @@ public class Main {
     public Main() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-        MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         UpdateHandler.checkRequiresUpdate();
     }
 
+    
+
     @SubscribeEvent
     public static void onScreenOpen(ScreenEvent.Opening event) {
+        System.out.println("dw: " + UpdateHandler.requiresUpdate);
         if (UpdateHandler.requiresUpdate && event.getNewScreen() instanceof TitleScreen) {
             event.setNewScreen(new ConfirmScreen(Main::confirm,
                 Component.translatable("gui.updater.available.title"),
