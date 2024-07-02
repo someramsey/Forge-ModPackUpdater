@@ -2,10 +2,14 @@
   "gui.updater.available.title": "Update Available",
   "gui.updater.available.message": "There is a new version of this modpack available. Click confirm to start the download.",
   "gui.updater.confirm": "Confirm",
-  "gui.updater.cancel": "Cancel",
+  "gui.updater.refuse": "Close the Game",
 
   "gui.updater.active.title": "Downloading Update",
+  "gui.updater.active.preparing": "Preparing the update...",
   "gui.updater.active.downloading": "Downloading...",
-  "gui.updater.active.preparing": "Preparing the download...",
-  "gui.updater.active.failed": "Download failed"
+  "gui.updater.active.failed": "Update failed",
+  "gui.updater.active.done": "Update Completed",
+
+  "gui.updater.restart": "Restart",
+  "gui.updater.openModsFolder": "Open Mods Folder"
 }

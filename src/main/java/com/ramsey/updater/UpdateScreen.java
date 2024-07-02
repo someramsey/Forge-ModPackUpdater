@@ -3,8 +3,9 @@ package com.ramsey.updater;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.gui.screens.AlertScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -16,10 +17,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class UpdateScreen extends Screen {
     private ProgressBar progressBar;
     private ErrorPanel errorPanel;
+    private Button restartButton;
+    private Button openFolderButton;
 
     private String details;
     private State state;
@@ -27,6 +31,7 @@ public class UpdateScreen extends Screen {
     private final Component downloadingMessage;
     private final Component preparingMessage;
     private final Component downloadFailedMessage;
+    private final Component downloadCompletedMessage;
 
     private final int infoColor = 16777215;
     private final int errorColor = -3014656;
@@ -37,6 +42,7 @@ public class UpdateScreen extends Screen {
         this.downloadingMessage = Component.translatable("gui.updater.active.downloading");
         this.preparingMessage = Component.translatable("gui.updater.active.preparing");
         this.downloadFailedMessage = Component.translatable("gui.updater.active.failed");
+        this.downloadCompletedMessage = Component.translatable("gui.updater.active.done");
 
         this.state = State.PREPARING;
     }
@@ -57,17 +63,20 @@ public class UpdateScreen extends Screen {
     }
 
     public void updateComplete() {
-        if(minecraft != null) {
-            minecraft.setScreen(new AlertScreen(() -> {
-                minecraft.stop();
-            }, Component.literal("title"), Component.literal("message"), Component.literal("restart"), false));
-        }
+        this.state = State.DONE;
+    }
+
+    private void openModsFolder() {
+
     }
 
     @Override
     protected void init() {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
         this.errorPanel = new ErrorPanel(this.width - 100, this.height - 50, 90, 50);
+
+        this.restartButton = new Button(this.width / 2 - 145, 170, 120, 20, Component.translatable("gui.updater.restart"), button -> Objects.requireNonNull(this.minecraft).stop());
+        this.openFolderButton = new Button(this.width / 2 + 25, 170, 120, 20, Component.translatable("gui.updater.openModsFolder"), button -> openModsFolder());
 
         if (state == State.ERROR) {
             this.errorPanel.setContent(details);
@@ -82,17 +91,36 @@ public class UpdateScreen extends Screen {
 
         if (state == State.ERROR) {
             this.errorPanel.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
-        } else {
-            this.progressBar.render(pPoseStack);
+            return;
         }
 
-        super.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
+        if(state == State.DONE) {
+            this.restartButton.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
+            this.openFolderButton.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
+        }
+
+        this.progressBar.render(pPoseStack);
+    }
+
+    @Override
+    public @NotNull List<? extends GuiEventListener> children() {
+        return List.of(
+            errorPanel,
+            restartButton,
+            openFolderButton
+        );
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return false;
     }
 
     private Component getMessage() {
         return switch (state) {
             case ERROR -> downloadFailedMessage;
             case PREPARING -> preparingMessage;
+            case DONE -> downloadCompletedMessage;
             case DOWNLOADING -> Component.empty().append(downloadingMessage).append(" ").append(details);
         };
     }
@@ -165,6 +193,7 @@ public class UpdateScreen extends Screen {
     private enum State {
         PREPARING,
         DOWNLOADING,
+        DONE,
         ERROR
     }
 }

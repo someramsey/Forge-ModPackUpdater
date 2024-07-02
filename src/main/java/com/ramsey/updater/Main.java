@@ -33,7 +33,7 @@ public class Main {
                     Component.translatable("gui.updater.available.title"),
                     Component.translatable("gui.updater.available.message"),
                     Component.translatable("gui.updater.confirm"),
-                    Component.translatable("gui.updater.cancel")
+                    Component.translatable("gui.updater.refuse")
                 ));
             }
         }
