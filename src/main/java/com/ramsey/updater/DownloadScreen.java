@@ -1,22 +1,11 @@
 package com.ramsey.updater;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.client.gui.ModListScreen;
-import net.minecraftforge.client.gui.ScreenUtils;
 import net.minecraftforge.client.gui.widget.ScrollPanel;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.util.Size2i;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -25,37 +14,58 @@ import java.util.List;
 
 public class DownloadScreen extends Screen {
     private ProgressBar progressBar;
-    private Component downloadingMessage;
-    private Component preparingMessage;
-    private String progress;
+    private ErrorPanel errorPanel;
 
-    private final int textColor = 16777215;
+    private String progress;
+    private State state;
+
+    private final Component downloadingMessage;
+    private final Component preparingMessage;
+    private final Component downloadFailedMessage;
+
+    private final int infoColor = 16777215;
+    private final int errorColor = -3014656;
 
     public DownloadScreen() {
         super(Component.literal("Download"));
+
+        this.downloadingMessage = Component.literal("Downloading...");
+        this.preparingMessage = Component.literal("Preparing the download...");
+        this.downloadFailedMessage = Component.literal("Download failed");
+
+        this.state = State.DOWNLOADING;
     }
 
     public void updateProgress(String progressMessage) {
         this.progress = progressMessage;
     }
 
+    public void displayError(String errorMessage) {
+        this.state = State.ERROR;
+        this.errorPanel.setContent(errorMessage);
+    }
+
     @Override
     protected void init() {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
-
-        this.downloadingMessage = Component.literal("Downloading...");
-        this.preparingMessage = Component.literal("Preparing the download...");
+        this.errorPanel = new ErrorPanel(this.width - 100, this.height - 140, 90, 50);
     }
 
     @Override
-    public void render(PoseStack pPoseStack, int pMouseX, int pMouseY, float pPartialTick) {
+    public void render(@NotNull PoseStack pPoseStack, int pMouseX, int pMouseY, float pPartialTick) {
         this.renderBackground(pPoseStack);
 
-        drawCenteredString(pPoseStack, this.font, getMessage(), this.width / 2, 70, textColor);
-        progressBar.render(pPoseStack);
+        drawCenteredString(pPoseStack, this.font, getMessage(), this.width / 2, 70, infoColor);
+
+        this.progressBar.render(pPoseStack);
+        this.errorPanel.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
 
         super.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
     }
+
+
+
+
 
     private Component getMessage() {
         if (progress == null) {
@@ -65,11 +75,10 @@ public class DownloadScreen extends Screen {
         return Component.empty().append(downloadingMessage).append(" ").append(progress);
     }
 
-
-    public class InfoPanel extends ScrollPanel {
+    private class ErrorPanel extends ScrollPanel {
         private final List<String> lines = new ArrayList<>();
 
-        public InfoPanel(int width, int height, int top, int left) {
+        public ErrorPanel(int width, int height, int top, int left) {
             super(minecraft, width, height, top, left);
         }
 
@@ -82,21 +91,18 @@ public class DownloadScreen extends Screen {
         }
 
         @Override
-        protected int getContentHeight() {
-            return font.lineHeight * lines.size();
+        protected void drawPanel(PoseStack poseStack, int entryRight, int relativeY, Tesselator tess, int mouseX, int mouseY) {
+            int y = relativeY;
+
+            for (String line : lines) {
+                drawString(poseStack, font, line, left + 10, y + 10, errorColor);
+                y += font.lineHeight;
+            }
         }
 
         @Override
-        protected void drawPanel(PoseStack poseStack, int entryRight, int relativeY, Tesselator tess, int mouseX, int mouseY) {
-            int y = top + 4 - getScrollAmount();
-
-            for (String line : lines) {
-                if (y > top && y < bottom) {
-                    drawCenteredString(poseStack, font, line, width / 2, y, textColor);
-                }
-
-                y += font.lineHeight;
-            }
+        protected int getContentHeight() {
+            return font.lineHeight * lines.size();
         }
 
         @Override
@@ -105,6 +111,14 @@ public class DownloadScreen extends Screen {
         }
 
         @Override
-        public void updateNarration(@NotNull NarrationElementOutput pNarrationElementOutput) { }
+        public void updateNarration(@NotNull NarrationElementOutput pNarrationElementOutput) {
+        }
+    }
+
+    private enum State {
+        PREPARING,
+        DOWNLOADING,
+        ERROR,
+        DONE
     }
 }

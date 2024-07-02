@@ -56,7 +56,7 @@ public class Main {
 
             DownloadScreen downloadScreen = new DownloadScreen();
             DownloadHandler downloadHandler = new DownloadHandler(downloadScreen);
-
+            
             minecraft.setScreen(downloadScreen);
 
             downloadHandler.start();

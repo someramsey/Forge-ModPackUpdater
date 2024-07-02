@@ -50,6 +50,7 @@ public class DownloadHandler {
                 }
             }
         } catch (Exception exception) {
+            downloadScreen.displayError(exception.getMessage());
             Main.LOGGER.error("Failed to download the file", exception);
         }
     }
