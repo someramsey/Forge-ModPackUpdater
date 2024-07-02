@@ -1,11 +1,10 @@
 package com.ramsey.updater;
 
-public class VersionInfo {
-    public final String version;
-    public final String url;
+import java.util.Objects;
 
-    public VersionInfo(String version, String url) {
-        this.version = version;
-        this.url = url;
+public record VersionInfo(String version, String url) {
+    public VersionInfo {
+        Objects.requireNonNull(version, "Invalid Body: Version cannot be null");
+        Objects.requireNonNull(url, "Invalid Body: Url cannot be null");
     }
 }

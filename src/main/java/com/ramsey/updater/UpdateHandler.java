@@ -13,7 +13,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,20 +23,28 @@ public abstract class UpdateHandler {
     public static boolean requiresUpdate;
 
     public static void checkRequiresUpdate() {
-        executor.submit(UpdateHandler::checkUpdate);
-    }
-
-    private static void checkUpdate() {
         try {
             versionInfo = getVersionInfo();
-            //TODO: Check
+
+            String latestVersion = Config.LatestVersion.get();
+            requiresUpdate = !latestVersion.equals(versionInfo.version());
         } catch (IOException exception) {
             Main.LOGGER.error("Failed to check for update", exception);
         }
     }
 
-    private void download() throws IOException {
-        String url = "https://www.dropbox.com/scl/fi/5rltym7xax4jwheiuy5vs/Create-Custom.rar?rlkey=x45y4qww3583cmx993enn1zbj&st=4hlddsqs&dl=1";
+    public static void startUpdate(UpdateScreen updateScreen) {
+        executor.submit(() -> {
+            try {
+                download(updateScreen);
+            } catch (IOException exception) {
+                Main.LOGGER.error("Update failed", exception);
+            }
+        });
+    }
+
+    private static void download(UpdateScreen updateScreen) throws IOException {
+        String url = versionInfo.url();
         String destination = "C:\\Users\\RamizKöfte\\Desktop\\dw\\pack.rar";
 
         URL connectionUrl = new URL(url);
@@ -58,7 +65,8 @@ public abstract class UpdateHandler {
                 out.write(buffer, 0, bytesRead);
                 totalBytesRead += bytesRead;
 
-//                updateScreen.updateProgress(totalBytesRead, fileSize);
+                float progress = (float) totalBytesRead / fileSize;
+                updateScreen.displayProgress("Downloading (" + totalBytesRead + "/" + fileSize + ")", progress);
             }
         } finally {
             connection.disconnect();
@@ -66,20 +74,20 @@ public abstract class UpdateHandler {
     }
 
     private static VersionInfo getVersionInfo() throws IOException {
-        URL url = new URL(Config.AccessUrl.get());
+        URL url = new URL(Config.FetchUrl.get());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
+        connection.setConnectTimeout(Config.FetchTimeout.get());
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept", "application/json");
 
         InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
-        JsonReader jsonReader = new JsonReader(inputStreamReader);
-        Gson gson = new Gson();
 
+        Gson gson = new Gson();
+        JsonReader jsonReader = new JsonReader(inputStreamReader);
         JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
 
         connection.disconnect();
-
 
         String version = jsonObject.get("version").getAsString();
         String downloadUrl = jsonObject.get("url").getAsString();

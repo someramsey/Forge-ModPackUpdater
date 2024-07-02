@@ -31,7 +31,6 @@ public class UpdateScreen extends Screen {
     private String details;
     private State state;
 
-    private final Component downloadingMessage;
     private final Component preparingMessage;
     private final Component downloadFailedMessage;
     private final Component downloadCompletedMessage;
@@ -42,7 +41,6 @@ public class UpdateScreen extends Screen {
     public UpdateScreen() {
         super(Component.translatable("gui.updater.active.title"));
 
-        this.downloadingMessage = Component.translatable("gui.updater.active.downloading");
         this.preparingMessage = Component.translatable("gui.updater.active.preparing");
         this.downloadFailedMessage = Component.translatable("gui.updater.active.failed");
         this.downloadCompletedMessage = Component.translatable("gui.updater.active.done");
@@ -50,11 +48,9 @@ public class UpdateScreen extends Screen {
         this.state = State.PREPARING;
     }
 
-    public void updateProgress(int readBytes, int totalBytes) {
-        float progress = (float) readBytes / totalBytes;
-
-        this.state = State.DOWNLOADING;
-        this.details = "(" + readBytes + " / " + totalBytes + ")";
+    public void displayProgress(String details, float progress) {
+        this.state = State.WORKING;
+        this.details = details;
         this.progressBar.progress = progress;
     }
 
@@ -74,7 +70,7 @@ public class UpdateScreen extends Screen {
             case ERROR -> downloadFailedMessage;
             case PREPARING -> preparingMessage;
             case DONE -> downloadCompletedMessage;
-            case DOWNLOADING -> Component.empty().append(downloadingMessage).append(" ").append(details);
+            case WORKING -> Component.empty().append(updatingMessage).append(" ").append(details);
         };
     }
 
@@ -192,7 +188,7 @@ public class UpdateScreen extends Screen {
 
     private enum State {
         PREPARING,
-        DOWNLOADING,
+        WORKING,
         DONE,
         ERROR
     }

@@ -4,9 +4,8 @@
   "gui.updater.confirm": "Confirm",
   "gui.updater.refuse": "Close the Game",
 
-  "gui.updater.active.title": "Downloading Update",
+  "gui.updater.active.title": "Updating",
   "gui.updater.active.preparing": "Preparing the update...",
-  "gui.updater.active.downloading": "Downloading...",
   "gui.updater.active.failed": "Update failed",
   "gui.updater.active.done": "Update Completed",
 
