@@ -65,6 +65,11 @@ public class UpdateScreen extends Screen {
         this.state = State.DONE;
     }
 
+    private void restart() {
+        UpdateHandler.runMaintananceScript();
+        Objects.requireNonNull(this.minecraft).stop();
+    }
+
     private Component getMessage() {
         return switch (state) {
             case ERROR -> downloadFailedMessage;
@@ -93,7 +98,7 @@ public class UpdateScreen extends Screen {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
         this.errorPanel = new ErrorPanel(this.width - 100, this.height - 100, 90, 50);
 
-        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.restart"), button -> Objects.requireNonNull(this.minecraft).stop());
+        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.restart"), button -> restart());
         this.openFolderButton = new Button(this.width / 2 + 15, 170, 110, 20, Component.translatable("gui.updater.openModsFolder"), button -> Util.getPlatform().openFile(FMLPaths.MODSDIR.get().toFile()));
 
         if (state == State.ERROR) {

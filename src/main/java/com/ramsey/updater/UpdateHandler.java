@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import com.mojang.realmsclient.util.JsonUtils;
 import net.minecraftforge.fml.loading.FMLPaths;
+import org.apache.commons.io.file.StandardDeleteOption;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,16 +21,34 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public abstract class UpdateHandler {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static VersionInfo versionInfo;
-    private static Path destinationDir;
-    private static UpdateScreen updateScreen;
 
+    private static VersionInfo versionInfo;
     public static boolean requiresUpdate;
+    private static UpdateScreen updateScreen;
+    private static Path destinationDir;
+
+    public static void runMaintananceScript() {
+        try {
+            Path scriptPath = destinationDir.resolve(Config.ScriptPath.get());
+
+            if (!Files.exists(scriptPath)) {
+                throw new IOException("Script specified in the config was not found, aborting");
+            }
+
+            ProcessBuilder processBuilder = new ProcessBuilder(scriptPath.toString());
+            processBuilder.start();
+
+            Main.LOGGER.info("Maintanance script started");
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
 
     public static void checkRequiresUpdate() {
         try {
@@ -49,10 +68,7 @@ public abstract class UpdateHandler {
 
         executor.submit(() -> {
             try {
-                if (!Files.exists(destinationDir)) {
-                    Files.createDirectories(destinationDir);
-                }
-
+                prepare();
                 download();
                 extract();
                 updateScreen.updateComplete();
@@ -60,6 +76,22 @@ public abstract class UpdateHandler {
                 onFail(exception);
             }
         });
+    }
+
+    private static void prepare() throws IOException {
+        if (!Files.exists(destinationDir)) {
+            Files.createDirectories(destinationDir);
+        }
+
+        try (Stream<Path> stream = Files.walk(destinationDir)) {
+            stream.filter(Files::isRegularFile).forEach(path -> {
+                try {
+                    Files.delete(path);
+                } catch (IOException exception) {
+                    Main.LOGGER.error("Failed to delete file: {}", path, exception);
+                }
+            });
+        }
     }
 
     private static void download() throws IOException {
@@ -119,20 +151,11 @@ public abstract class UpdateHandler {
                     }
                 }
             }
-
-            updateScreen.displayProgress("Cleaning up", 1);
-
-            System.out.println(packagePath);
-            System.out.println(Files.exists(packagePath));
-
-            Files.delete(packagePath);
-
-            Path scriptPath = destinationDir.resolve(Config.ScriptPath.get());
-
-            if (!Files.exists(scriptPath)) {
-                throw new IOException("Script specified in the config was not found, aborting");
-            }
         }
+
+        updateScreen.displayProgress("Cleaning up", 1);
+
+        Files.delete(packagePath);
     }
 
     private static VersionInfo getVersionInfo() throws IOException {
