@@ -13,8 +13,25 @@ public class Config {
     public static final ForgeConfigSpec.ConfigValue<Integer> FetchTimeout = BUILDER.comment("The timeout for the connection when fetching the update info")
         .define("fetch_timeout", 5000);
 
-//    public static final ForgeConfigSpec.ConfigValue<String> DownloadDestination = BUILDER.comment("The path used to temporarily store the downloaded files")
-//        .define("download_destination", ".update");
+    public static final ForgeConfigSpec.ConfigValue<String> RootDir = BUILDER.comment("The root directory used for operations")
+        .define("root_dir", ".\\updater\\");
+
+    public static final ForgeConfigSpec.ConfigValue<String> PackagePath = BUILDER.comment("The filename used to temporarily store the payload file")
+        .define("package_filename", "pack.zip");
+
+    public static final ForgeConfigSpec.ConfigValue<String> ScriptPath = BUILDER.comment("The filename used run the script")
+        .define("script_filename", "script.bat");
+
+
+
+
+
+
+
+
+
+
+
 
     public static final ForgeConfigSpec.ConfigValue<String> LatestVersion = BUILDER.comment("(DO NOT CHANGE) The latest downloaded version")
         .define("latest_version", "none");

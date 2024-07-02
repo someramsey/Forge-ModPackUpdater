@@ -3,6 +3,8 @@ package com.ramsey.updater;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
+import com.mojang.realmsclient.util.JsonUtils;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,14 +14,20 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public abstract class UpdateHandler {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private static VersionInfo versionInfo;
+    private static Path destinationDir;
+    private static UpdateScreen updateScreen;
 
     public static boolean requiresUpdate;
 
@@ -29,39 +37,43 @@ public abstract class UpdateHandler {
 
             String latestVersion = Config.LatestVersion.get();
             requiresUpdate = !latestVersion.equals(versionInfo.version());
-            Main.LOGGER.info("Requires update: " + requiresUpdate);
         } catch (IOException exception) {
             Main.LOGGER.error("Failed to check for update", exception);
         }
     }
 
     public static void startUpdate(UpdateScreen updateScreen) {
+        Path gameDir = FMLPaths.GAMEDIR.get();
+        UpdateHandler.destinationDir = gameDir.resolve(Config.RootDir.get());
+        UpdateHandler.updateScreen = updateScreen;
+
         executor.submit(() -> {
             try {
-                download(updateScreen);
-                updateScreen.updateComplete();
-            } catch (IOException exception) {
-                Main.LOGGER.error("Update failed", exception);
+                if (!Files.exists(destinationDir)) {
+                    Files.createDirectories(destinationDir);
+                }
 
-                updateScreen.displayError("Update failed (" + exception.getClass().getName() + ") " +
-                    exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace())
-                );
+                download();
+                extract();
+                updateScreen.updateComplete();
+            } catch (Exception exception) {
+                onFail(exception);
             }
         });
     }
 
-    private static void download(UpdateScreen updateScreen) throws IOException {
-        String url = versionInfo.url();
-        String destination = "C:\\Users\\RamizKöfte\\Desktop\\dw\\pack.rar";
+    private static void download() throws IOException {
+        URL url = new URL(versionInfo.url());
+        Path path = destinationDir.resolve(Config.PackagePath.get());
 
-        URL connectionUrl = new URL(url);
-        HttpURLConnection connection = (HttpURLConnection) connectionUrl.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         int fileSize = connection.getContentLength();
 
+
         try (
             InputStream in = connection.getInputStream();
-            OutputStream out = Files.newOutputStream(Path.of(destination), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+            OutputStream out = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         ) {
             byte[] buffer = new byte[1024];
 
@@ -72,11 +84,54 @@ public abstract class UpdateHandler {
                 out.write(buffer, 0, bytesRead);
                 totalBytesRead += bytesRead;
 
-                float progress = (float) totalBytesRead / fileSize;
+                float progress = (float) Math.max(totalBytesRead, 1) / fileSize;
                 updateScreen.displayProgress("Downloading (" + totalBytesRead + "/" + fileSize + ")", progress);
             }
         } finally {
             connection.disconnect();
+        }
+    }
+
+    private static void extract() throws IOException {
+        Path packagePath = destinationDir.resolve(Config.PackagePath.get());
+
+        updateScreen.displayProgress("Extracting", 0);
+
+        try (ZipFile zipFile = new ZipFile(packagePath.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+            int totalEntries = zipFile.size();
+            int entryIndex = 0;
+
+            while (entries.hasMoreElements()) {
+                entryIndex++;
+                ZipEntry entry = entries.nextElement();
+                Path entryPath = destinationDir.resolve(entry.getName());
+
+                if (entry.isDirectory()) {
+                    Files.createDirectories(entryPath);
+                } else {
+                    try (InputStream in = zipFile.getInputStream(entry)) {
+                        Files.copy(in, entryPath, StandardCopyOption.REPLACE_EXISTING);
+
+                        float progress = (float) entryIndex / totalEntries;
+                        updateScreen.displayProgress("Extracting (" + entryIndex + "/" + totalEntries + ")", progress);
+                    }
+                }
+            }
+
+            updateScreen.displayProgress("Cleaning up", 1);
+
+            System.out.println(packagePath);
+            System.out.println(Files.exists(packagePath));
+
+            Files.delete(packagePath);
+
+            Path scriptPath = destinationDir.resolve(Config.ScriptPath.get());
+
+            if (!Files.exists(scriptPath)) {
+                throw new IOException("Script specified in the config was not found, aborting");
+            }
         }
     }
 
@@ -100,5 +155,14 @@ public abstract class UpdateHandler {
         String downloadUrl = jsonObject.get("url").getAsString();
 
         return new VersionInfo(version, downloadUrl);
+    }
+
+
+    private static void onFail(Exception exception) {
+        String errorMessage = "Update failed (" + exception.getClass().getName() + ") " +
+            exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace());
+
+        Main.LOGGER.error(errorMessage);
+        UpdateHandler.updateScreen.displayError(errorMessage);
     }
 }

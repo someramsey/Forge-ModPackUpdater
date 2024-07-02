@@ -7,7 +7,7 @@
   "gui.updater.active.title": "Updating",
   "gui.updater.active.preparing": "Preparing the update...",
   "gui.updater.active.failed": "Update failed",
-  "gui.updater.active.done": "Update Completed",
+  "gui.updater.active.done": "Update Completed, press restart to run the installed script.",
 
   "gui.updater.restart": "Restart",
   "gui.updater.openModsFolder": "Open Mods Folder"
