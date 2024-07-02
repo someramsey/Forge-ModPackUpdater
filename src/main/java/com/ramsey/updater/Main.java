@@ -58,13 +58,6 @@ public class Main {
 
             minecraft.setScreen(downloadScreen);
 
-            downloadScreen.progressStart(Component.literal("Header"));
-            downloadScreen.progressStage(Component.literal("Stage"));
-            downloadScreen.setProgress(0.1f);
-
-
-
-
             new Thread(() -> {
                 try {
                     download(downloadScreen);
@@ -95,8 +88,8 @@ public class Main {
 
 
 
-                    
-                    downloadScreen.setProgress(progress);
+
+                    downloadScreen.updateProgress(totalBytesRead + " / " + fileSize + " bytes");
                 }
             }
         }

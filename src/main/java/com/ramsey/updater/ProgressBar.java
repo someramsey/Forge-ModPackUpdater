@@ -8,10 +8,10 @@ import org.jetbrains.annotations.NotNull;
 public class ProgressBar extends GuiComponent implements Widget {
     public float progress;
 
-    private final int x;
-    private final int y;
-    private final int width;
-    private final int height;
+    private int x;
+    private int y;
+    private int width;
+    private int height;
 
     private static final int outlineThickness = 1;
     private static final int innerMargin = 2;
@@ -24,6 +24,15 @@ public class ProgressBar extends GuiComponent implements Widget {
         this.y = y;
         this.width = width;
         this.height = height;
+    }
+
+    public void render(@NotNull PoseStack pPoseStack, int pMouseX, int pMouse, float pPartialTick, int x, int y, int width, int height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+
+        render(pPoseStack, pMouseX, pMouse, pPartialTick);
     }
 
     @Override
