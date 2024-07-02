@@ -27,7 +27,7 @@ import java.nio.file.StandardOpenOption;
 @Mod(Main.MODID)
 public class Main {
     public static final String MODID = "updater";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public Main() throws IOException {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -55,43 +55,11 @@ public class Main {
             }
 
             DownloadScreen downloadScreen = new DownloadScreen();
+            DownloadHandler downloadHandler = new DownloadHandler(downloadScreen);
 
             minecraft.setScreen(downloadScreen);
 
-            new Thread(() -> {
-                try {
-                    download(downloadScreen);
-                } catch (IOException exception) {
-                    LOGGER.error("Failed to download the file", exception);
-                }
-            }).start();
-        }
-
-        private static void download(DownloadScreen downloadScreen) throws IOException {
-            URL website = new URL("https://www.dropbox.com/scl/fi/5rltym7xax4jwheiuy5vs/Create-Custom.rar?rlkey=x45y4qww3583cmx993enn1zbj&st=4hlddsqs&dl=1");
-            HttpURLConnection connection = (HttpURLConnection) website.openConnection();
-            int fileSize = connection.getContentLength();
-
-            try (
-                InputStream in = connection.getInputStream();
-                OutputStream out = Files.newOutputStream(Path.of("C:\\Users\\RamizKöfte\\Desktop\\dw\\pack.rar"), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
-            ) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                int totalBytesRead = 0;
-
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
-                    totalBytesRead += bytesRead;
-
-                    float progress = (float) totalBytesRead / fileSize;
-
-
-
-
-                    downloadScreen.updateProgress(totalBytesRead + " / " + fileSize + " bytes");
-                }
-            }
+            downloadHandler.start();
         }
     }
 
