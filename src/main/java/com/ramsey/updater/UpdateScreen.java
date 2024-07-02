@@ -2,6 +2,7 @@ package com.ramsey.updater;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.Util;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -13,9 +14,11 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.client.gui.widget.ScrollPanel;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -66,17 +69,36 @@ public class UpdateScreen extends Screen {
         this.state = State.DONE;
     }
 
-    private void openModsFolder() {
+    private Component getMessage() {
+        return switch (state) {
+            case ERROR -> downloadFailedMessage;
+            case PREPARING -> preparingMessage;
+            case DONE -> downloadCompletedMessage;
+            case DOWNLOADING -> Component.empty().append(downloadingMessage).append(" ").append(details);
+        };
+    }
 
+    @Override
+    public @NotNull List<? extends GuiEventListener> children() {
+        return switch (state) {
+            case ERROR -> List.of(errorPanel);
+            case DONE -> List.of(restartButton, openFolderButton);
+            default -> Collections.emptyList();
+        };
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return false;
     }
 
     @Override
     protected void init() {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
-        this.errorPanel = new ErrorPanel(this.width - 100, this.height - 50, 90, 50);
+        this.errorPanel = new ErrorPanel(this.width - 100, this.height - 100, 90, 50);
 
-        this.restartButton = new Button(this.width / 2 - 145, 170, 120, 20, Component.translatable("gui.updater.restart"), button -> Objects.requireNonNull(this.minecraft).stop());
-        this.openFolderButton = new Button(this.width / 2 + 25, 170, 120, 20, Component.translatable("gui.updater.openModsFolder"), button -> openModsFolder());
+        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.restart"), button -> Objects.requireNonNull(this.minecraft).stop());
+        this.openFolderButton = new Button(this.width / 2 + 15, 170, 110, 20, Component.translatable("gui.updater.openModsFolder"), button -> Util.getPlatform().openFile(FMLPaths.MODSDIR.get().toFile()));
 
         if (state == State.ERROR) {
             this.errorPanel.setContent(details);
@@ -94,35 +116,13 @@ public class UpdateScreen extends Screen {
             return;
         }
 
-        if(state == State.DONE) {
+
+        if (state == State.DONE) {
             this.restartButton.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
             this.openFolderButton.render(pPoseStack, pMouseX, pMouseY, pPartialTick);
         }
 
         this.progressBar.render(pPoseStack);
-    }
-
-    @Override
-    public @NotNull List<? extends GuiEventListener> children() {
-        return List.of(
-            errorPanel,
-            restartButton,
-            openFolderButton
-        );
-    }
-
-    @Override
-    public boolean shouldCloseOnEsc() {
-        return false;
-    }
-
-    private Component getMessage() {
-        return switch (state) {
-            case ERROR -> downloadFailedMessage;
-            case PREPARING -> preparingMessage;
-            case DONE -> downloadCompletedMessage;
-            case DOWNLOADING -> Component.empty().append(downloadingMessage).append(" ").append(details);
-        };
     }
 
     private class ErrorPanel extends ScrollPanel {
