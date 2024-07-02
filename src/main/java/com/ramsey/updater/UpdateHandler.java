@@ -29,35 +29,37 @@ public class UpdateHandler {
 
     private void updateTask() {
         try {
-            getVersionInfo();
+            VersionInfo versionInfo = getVersionInfo();
 
             //TODO: extract
 
             updateScreen.updateComplete();
         } catch (Exception exception) {
             updateScreen.displayError(exception.getLocalizedMessage() + "\n" + Arrays.toString(exception.getStackTrace()).repeat(100));
-            Main.LOGGER.error("Failed to download the file", exception);
+            Main.LOGGER.error("Update failed", exception);
         }
     }
 
-    private void getVersionInfo() throws IOException {
-        String urlString = "http://localhost:3000";
+    private VersionInfo getVersionInfo() throws IOException {
+        URL url = new URL(Config.AccessUrl.get());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        URL url = new URL(urlString);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Accept", "application/json");
 
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Accept", "application/json");
-
-        InputStreamReader inputStreamReader = new InputStreamReader(conn.getInputStream());
+        InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
         JsonReader jsonReader = new JsonReader(inputStreamReader);
         Gson gson = new Gson();
 
         JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
 
-        System.out.println(jsonObject.toString());
+        connection.disconnect();
 
-        conn.disconnect();
+
+        String version = jsonObject.get("version").getAsString();
+        String downloadUrl = jsonObject.get("url").getAsString();
+
+        return new VersionInfo(version, downloadUrl);
     }
 
     private void download() throws IOException {
@@ -88,4 +90,5 @@ public class UpdateHandler {
             connection.disconnect();
         }
     }
+
 }
