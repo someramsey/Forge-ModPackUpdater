@@ -11,20 +11,20 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class DownloadHandler {
-    private final DownloadScreen downloadScreen;
+public class UpdateHandler {
+    private final UpdateScreen updateScreen;
     private final ExecutorService executor;
 
-    public DownloadHandler(DownloadScreen downloadScreen) {
-        this.downloadScreen = downloadScreen;
+    public UpdateHandler(UpdateScreen updateScreen) {
+        this.updateScreen = updateScreen;
         this.executor = Executors.newSingleThreadExecutor();
     }
 
     public void start() {
-        executor.execute(this::downloadTask);
+        executor.execute(this::updateTask);
     }
 
-    private void downloadTask() {
+    private void updateTask() {
         try {
             String url = "https://www.dropbox.com/scl/fi/5rltym7xax4jwheiuy5vs/Create-Custom.rar?rlkey=x45y4qww3583cmx993enn1zbj&st=4hlddsqs&dl=1";
             String destination = "C:\\Users\\RamizKöfte\\Desktop\\dw\\pack.rar";
@@ -47,11 +47,17 @@ public class DownloadHandler {
                     out.write(buffer, 0, bytesRead);
                     totalBytesRead += bytesRead;
 
-                    downloadScreen.updateProgress(totalBytesRead, fileSize);
+                    updateScreen.updateProgress(totalBytesRead, fileSize);
                 }
+            } finally {
+                connection.disconnect();
             }
+
+            //TODO: extract
+
+            updateScreen.updateComplete();
         } catch (Exception exception) {
-            downloadScreen.displayError(exception.getLocalizedMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+            updateScreen.displayError(exception.getLocalizedMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
             Main.LOGGER.error("Failed to download the file", exception);
         }
     }

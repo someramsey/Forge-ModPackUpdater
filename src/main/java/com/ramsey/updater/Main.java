@@ -10,18 +10,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import org.jline.utils.Log;
 import org.slf4j.Logger;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 
 @Mod(Main.MODID)
@@ -39,8 +30,8 @@ public class Main {
         public static void onScreenOpen(ScreenEvent.Opening event) {
             if (event.getNewScreen() instanceof TitleScreen) {
                 event.setNewScreen(new ConfirmScreen(ClientEvents::confirm,
-                    Component.translatable("gui.updater.title"),
-                    Component.translatable("gui.updater.message"),
+                    Component.translatable("gui.updater.available.title"),
+                    Component.translatable("gui.updater.available.message"),
                     Component.translatable("gui.updater.confirm"),
                     Component.translatable("gui.updater.cancel")
                 ));
@@ -54,12 +45,12 @@ public class Main {
                 minecraft.stop();
             }
 
-            DownloadScreen downloadScreen = new DownloadScreen();
-            DownloadHandler downloadHandler = new DownloadHandler(downloadScreen);
-            
-            minecraft.setScreen(downloadScreen);
+            UpdateScreen updateScreen = new UpdateScreen();
+            UpdateHandler updateHandler = new UpdateHandler(updateScreen);
 
-            downloadHandler.start();
+            minecraft.setScreen(updateScreen);
+
+            updateHandler.start();
         }
     }
 

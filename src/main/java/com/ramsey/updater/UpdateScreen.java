@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.AlertScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DownloadScreen extends Screen {
+public class UpdateScreen extends Screen {
     private ProgressBar progressBar;
     private ErrorPanel errorPanel;
 
@@ -30,12 +31,12 @@ public class DownloadScreen extends Screen {
     private final int infoColor = 16777215;
     private final int errorColor = -3014656;
 
-    public DownloadScreen() {
-        super(Component.literal("Download"));
+    public UpdateScreen() {
+        super(Component.translatable("gui.updater.active.title"));
 
-        this.downloadingMessage = Component.literal("Downloading...");
-        this.preparingMessage = Component.literal("Preparing the download...");
-        this.downloadFailedMessage = Component.literal("Download failed");
+        this.downloadingMessage = Component.translatable("gui.updater.active.downloading");
+        this.preparingMessage = Component.translatable("gui.updater.active.preparing");
+        this.downloadFailedMessage = Component.translatable("gui.updater.active.failed");
 
         this.state = State.PREPARING;
     }
@@ -55,12 +56,20 @@ public class DownloadScreen extends Screen {
         this.errorPanel.setContent(errorMessage);
     }
 
+    public void updateComplete() {
+        if(minecraft != null) {
+            minecraft.setScreen(new AlertScreen(() -> {
+                minecraft.stop();
+            }, Component.literal("title"), Component.literal("message"), Component.literal("restart"), false));
+        }
+    }
+
     @Override
     protected void init() {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
-        this.errorPanel = new ErrorPanel(this.width - 100, this.height - 140, 90, 50);
+        this.errorPanel = new ErrorPanel(this.width - 100, this.height - 50, 90, 50);
 
-        if(state == State.ERROR) {
+        if (state == State.ERROR) {
             this.errorPanel.setContent(details);
         }
     }
@@ -104,7 +113,7 @@ public class DownloadScreen extends Screen {
         private void updateLines() {
             List<FormattedCharSequence> newLines = new ArrayList<>();
 
-            if(content == null) {
+            if (content == null) {
                 return;
             }
 
@@ -131,6 +140,11 @@ public class DownloadScreen extends Screen {
                 drawString(poseStack, font, line, left + 10, y + 10, errorColor);
                 y += font.lineHeight;
             }
+        }
+
+        @Override
+        protected int getScrollAmount() {
+            return font.lineHeight * 3;
         }
 
         @Override

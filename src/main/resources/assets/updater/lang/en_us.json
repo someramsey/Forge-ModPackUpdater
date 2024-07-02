@@ -1,6 +1,11 @@
 {
-  "gui.updater.title": "Update Available",
-  "gui.updater.message": "There is a new version of this modpack available. Click confirm to start the download.",
+  "gui.updater.available.title": "Update Available",
+  "gui.updater.available.message": "There is a new version of this modpack available. Click confirm to start the download.",
   "gui.updater.confirm": "Confirm",
-  "gui.updater.cancel": "Cancel"
+  "gui.updater.cancel": "Cancel",
+
+  "gui.updater.active.title": "Downloading Update",
+  "gui.updater.active.downloading": "Downloading...",
+  "gui.updater.active.preparing": "Preparing the download...",
+  "gui.updater.active.failed": "Download failed"
 }
