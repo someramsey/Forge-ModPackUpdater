@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
@@ -14,52 +17,23 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class UpdateHandler {
-    private final UpdateScreen updateScreen;
-    private final ExecutorService executor;
+public abstract class UpdateHandler {
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static VersionInfo versionInfo;
 
-    public UpdateHandler(UpdateScreen updateScreen) {
-        this.updateScreen = updateScreen;
-        this.executor = Executors.newSingleThreadExecutor();
+    public static boolean requiresUpdate;
+
+    public static void checkRequiresUpdate() {
+        executor.submit(UpdateHandler::checkUpdate);
     }
 
-    public void start() {
-        executor.execute(this::updateTask);
-    }
-
-    private void updateTask() {
+    private static void checkUpdate() {
         try {
-            VersionInfo versionInfo = getVersionInfo();
-
-            //TODO: extract
-
-            updateScreen.updateComplete();
-        } catch (Exception exception) {
-            updateScreen.displayError(exception.getLocalizedMessage() + "\n" + Arrays.toString(exception.getStackTrace()).repeat(100));
-            Main.LOGGER.error("Update failed", exception);
+            versionInfo = getVersionInfo();
+            //TODO: Check
+        } catch (IOException exception) {
+            Main.LOGGER.error("Failed to check for update", exception);
         }
-    }
-
-    private VersionInfo getVersionInfo() throws IOException {
-        URL url = new URL(Config.AccessUrl.get());
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", "application/json");
-
-        InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
-        JsonReader jsonReader = new JsonReader(inputStreamReader);
-        Gson gson = new Gson();
-
-        JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
-
-        connection.disconnect();
-
-
-        String version = jsonObject.get("version").getAsString();
-        String downloadUrl = jsonObject.get("url").getAsString();
-
-        return new VersionInfo(version, downloadUrl);
     }
 
     private void download() throws IOException {
@@ -84,11 +58,32 @@ public class UpdateHandler {
                 out.write(buffer, 0, bytesRead);
                 totalBytesRead += bytesRead;
 
-                updateScreen.updateProgress(totalBytesRead, fileSize);
+//                updateScreen.updateProgress(totalBytesRead, fileSize);
             }
         } finally {
             connection.disconnect();
         }
     }
 
+    private static VersionInfo getVersionInfo() throws IOException {
+        URL url = new URL(Config.AccessUrl.get());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Accept", "application/json");
+
+        InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
+        JsonReader jsonReader = new JsonReader(inputStreamReader);
+        Gson gson = new Gson();
+
+        JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
+
+        connection.disconnect();
+
+
+        String version = jsonObject.get("version").getAsString();
+        String downloadUrl = jsonObject.get("url").getAsString();
+
+        return new VersionInfo(version, downloadUrl);
+    }
 }

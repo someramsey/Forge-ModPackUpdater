@@ -1,6 +1,6 @@
 package com.ramsey.updater;
 
-class VersionInfo {
+public class VersionInfo {
     public final String version;
     public final String url;
 
