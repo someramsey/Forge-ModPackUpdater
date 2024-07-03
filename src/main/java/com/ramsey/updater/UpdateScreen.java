@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class UpdateScreen extends Screen {
     private ProgressBar progressBar;
@@ -65,40 +64,12 @@ public class UpdateScreen extends Screen {
         this.state = State.DONE;
     }
 
-    private void restart() {
-        UpdateHandler.runMaintananceScript();
-        Objects.requireNonNull(this.minecraft).stop();
-    }
-
-    private Component getMessage() {
-        return switch (state) {
-            case ERROR -> downloadFailedMessage;
-            case PREPARING -> preparingMessage;
-            case DONE -> downloadCompletedMessage;
-            case WORKING -> Component.literal(details);
-        };
-    }
-
-    @Override
-    public @NotNull List<? extends GuiEventListener> children() {
-        return switch (state) {
-            case ERROR -> List.of(errorPanel);
-            case DONE -> List.of(restartButton, openFolderButton);
-            default -> Collections.emptyList();
-        };
-    }
-
-    @Override
-    public boolean shouldCloseOnEsc() {
-        return false;
-    }
-
     @Override
     protected void init() {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
         this.errorPanel = new ErrorPanel(this.width - 100, this.height - 100, 90, 50);
 
-        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.restart"), button -> restart());
+        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.continue"), button -> UpdateHandler.runInstallScript());
         this.openFolderButton = new Button(this.width / 2 + 15, 170, 110, 20, Component.translatable("gui.updater.openModsFolder"), button -> Util.getPlatform().openFile(FMLPaths.MODSDIR.get().toFile()));
 
         if (state == State.ERROR) {
@@ -124,6 +95,29 @@ public class UpdateScreen extends Screen {
         }
 
         this.progressBar.render(pPoseStack);
+    }
+
+    private Component getMessage() {
+        return switch (state) {
+            case ERROR -> downloadFailedMessage;
+            case PREPARING -> preparingMessage;
+            case DONE -> downloadCompletedMessage;
+            case WORKING -> Component.literal(details);
+        };
+    }
+
+    @Override
+    public @NotNull List<? extends GuiEventListener> children() {
+        return switch (state) {
+            case ERROR -> List.of(errorPanel);
+            case DONE -> List.of(restartButton, openFolderButton);
+            default -> Collections.emptyList();
+        };
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return false;
     }
 
     private class ErrorPanel extends ScrollPanel {

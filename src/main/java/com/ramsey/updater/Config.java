@@ -19,20 +19,6 @@ public class Config {
     public static final ForgeConfigSpec.ConfigValue<String> PackagePath = BUILDER.comment("The filename used to temporarily store the payload file")
         .define("package_filename", "pack.zip");
 
-    public static final ForgeConfigSpec.ConfigValue<String> ScriptPath = BUILDER.comment("The filename used run the script")
-        .define("script_filename", "script.bat");
-
-
-
-
-
-
-
-
-
-
-
-
     public static final ForgeConfigSpec.ConfigValue<String> LatestVersion = BUILDER.comment("(DO NOT CHANGE) The latest downloaded version")
         .define("latest_version", "none");
 

@@ -7,8 +7,8 @@
   "gui.updater.active.title": "Updating",
   "gui.updater.active.preparing": "Preparing the update...",
   "gui.updater.active.failed": "Update failed",
-  "gui.updater.active.done": "Update Completed, press restart to run the installed script.",
+  "gui.updater.active.done": "Update Completed, press continue to complete the installation. This will run the install script downloaded from the modpack.",
 
-  "gui.updater.restart": "Restart",
+  "gui.updater.continue": "Continue",
   "gui.updater.openModsFolder": "Open Mods Folder"
 }

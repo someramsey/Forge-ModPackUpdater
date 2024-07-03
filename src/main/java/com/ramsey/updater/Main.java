@@ -12,7 +12,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
 @Mod(Main.MODID)
@@ -26,7 +25,7 @@ public class Main {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        UpdateHandler.checkRequiresUpdate();
+        UpdateHandler.fetchPackInfo();
     }
 
     @Mod.EventBusSubscriber(modid = Main.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -53,7 +52,7 @@ public class Main {
             UpdateScreen updateScreen = new UpdateScreen();
 
             minecraft.setScreen(updateScreen);
-            UpdateHandler.startUpdate(updateScreen);
+            UpdateHandler.installUpdate(updateScreen);
         }
     }
 }

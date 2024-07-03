@@ -3,9 +3,8 @@ package com.ramsey.updater;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
-import com.mojang.realmsclient.util.JsonUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.apache.commons.io.file.StandardDeleteOption;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,40 +27,70 @@ import java.util.zip.ZipFile;
 public abstract class UpdateHandler {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private static VersionInfo versionInfo;
+    private static PackInfo packInfo;
     public static boolean requiresUpdate;
+
     private static UpdateScreen updateScreen;
     private static Path destinationDir;
 
-    public static void runMaintananceScript() {
+    public static void runInstallScript() {
+        long currentPid = ProcessHandle.current().pid();
+
+        String javaHome = System.getProperty("java.home");
+        String javaBinPath = javaHome + "/bin/java";
+
+        String currentJarPath = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        String[] command = new String[]{
+            javaBinPath,
+            "-cp",
+            currentJarPath,
+            "com.ramsey.updater.PostUpdateTask",
+            Long.toString(currentPid),
+            destinationDir.resolve(packInfo.scriptPath()).toString()
+        };
+
         try {
-            Path scriptPath = destinationDir.resolve(Config.ScriptPath.get());
-
-            if (!Files.exists(scriptPath)) {
-                throw new IOException("Script specified in the config was not found, aborting");
-            }
-
-            ProcessBuilder processBuilder = new ProcessBuilder(scriptPath.toString());
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
             processBuilder.start();
 
-            Main.LOGGER.info("Maintanance script started");
+            Main.LOGGER.info("Install script started");
         } catch (IOException exception) {
-            throw new RuntimeException(exception);
+            Main.LOGGER.error("Failed to start install script", exception);
         }
     }
 
-    public static void checkRequiresUpdate() {
+    public static void fetchPackInfo() {
         try {
-            versionInfo = getVersionInfo();
+            URL url = new URL(Config.FetchUrl.get());
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            String latestVersion = Config.LatestVersion.get();
-            requiresUpdate = !latestVersion.equals(versionInfo.version());
+            connection.setConnectTimeout(Config.FetchTimeout.get());
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
+
+            InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
+
+            Gson gson = new Gson();
+            JsonReader jsonReader = new JsonReader(inputStreamReader);
+            JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
+
+            String version = jsonObject.get("version").getAsString();
+            String downloadUrl = jsonObject.get("url").getAsString();
+            String installationScript = jsonObject.get("script").getAsString();
+
+            connection.disconnect();
+            inputStreamReader.close();
+            jsonReader.close();
+
+            UpdateHandler.packInfo = new PackInfo(version, downloadUrl, installationScript);
+            UpdateHandler.requiresUpdate = !Config.LatestVersion.get().equals(version);
         } catch (IOException exception) {
             Main.LOGGER.error("Failed to check for update", exception);
         }
     }
 
-    public static void startUpdate(UpdateScreen updateScreen) {
+    public static void installUpdate(UpdateScreen updateScreen) {
         Path gameDir = FMLPaths.GAMEDIR.get();
         UpdateHandler.destinationDir = gameDir.resolve(Config.RootDir.get());
         UpdateHandler.updateScreen = updateScreen;
@@ -95,7 +124,7 @@ public abstract class UpdateHandler {
     }
 
     private static void download() throws IOException {
-        URL url = new URL(versionInfo.url());
+        URL url = new URL(packInfo.url());
         Path path = destinationDir.resolve(Config.PackagePath.get());
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -157,29 +186,6 @@ public abstract class UpdateHandler {
 
         Files.delete(packagePath);
     }
-
-    private static VersionInfo getVersionInfo() throws IOException {
-        URL url = new URL(Config.FetchUrl.get());
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-        connection.setConnectTimeout(Config.FetchTimeout.get());
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", "application/json");
-
-        InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
-
-        Gson gson = new Gson();
-        JsonReader jsonReader = new JsonReader(inputStreamReader);
-        JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
-
-        connection.disconnect();
-
-        String version = jsonObject.get("version").getAsString();
-        String downloadUrl = jsonObject.get("url").getAsString();
-
-        return new VersionInfo(version, downloadUrl);
-    }
-
 
     private static void onFail(Exception exception) {
         String errorMessage = "Update failed (" + exception.getClass().getName() + ") " +
