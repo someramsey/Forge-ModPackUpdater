@@ -17,7 +17,7 @@ public class Config {
         .define("modpack_name", "Some Modpack");
 
     private static final ForgeConfigSpec.ConfigValue<String> FetchUrl = BUILDER.comment("The url to fetch the update info, see README.md for more info")
-        .define("fetch_url", "http://localhost:3000");
+        .define("fetch_url", "http://localhost:3000/version.json");
 
     private static final ForgeConfigSpec.ConfigValue<Integer> FetchTimeout = BUILDER.comment("The timeout for the connection when fetching the update info")
         .define("fetch_timeout", 5000);
