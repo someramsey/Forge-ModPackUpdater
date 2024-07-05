@@ -69,7 +69,7 @@ public class UpdateScreen extends Screen {
         this.progressBar = new ProgressBar(100, 120, this.width - 200, 10);
         this.errorPanel = new ErrorPanel(this.width - 100, this.height - 100, 90, 50);
 
-        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.continue"), button -> UpdateHandler.runInstallScript());
+        this.restartButton = new Button(this.width / 2 - 135, 170, 110, 20, Component.translatable("gui.updater.install"), button -> UpdateHandler.runInstallScript());
         this.openFolderButton = new Button(this.width / 2 + 15, 170, 110, 20, Component.translatable("gui.updater.openModsFolder"), button -> Util.getPlatform().openFile(FMLPaths.MODSDIR.get().toFile()));
 
         if (state == State.ERROR) {
@@ -182,6 +182,37 @@ public class UpdateScreen extends Screen {
 
         @Override
         public void updateNarration(@NotNull NarrationElementOutput pNarrationElementOutput) {
+        }
+    }
+
+    private static class ProgressBar extends GuiComponent {
+        public float progress;
+
+        private final int x;
+        private final int y;
+        private final int width;
+        private final int height;
+
+        private static final int outlineThickness = 1;
+        private static final int innerMargin = 2;
+
+        private static final int outlineColor = -1;
+        private static final int fillColor = -1;
+
+        public ProgressBar(int x, int y, int width, int height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+
+        public void render(@NotNull PoseStack pPoseStack) {
+            GuiComponent.fill(pPoseStack, x, y, x + width, y + outlineThickness, outlineColor);
+            GuiComponent.fill(pPoseStack, x, y + height - outlineThickness, x + width, y + height, outlineColor);
+            GuiComponent.fill(pPoseStack, x, y + outlineThickness, x + outlineThickness, y + height - outlineThickness, outlineColor);
+            GuiComponent.fill(pPoseStack, x + width - outlineThickness, y + outlineThickness, x + width, y + height - outlineThickness, outlineColor);
+
+            GuiComponent.fill(pPoseStack, x + innerMargin, y + innerMargin, x + (int) ((width - innerMargin) * progress), y + height - innerMargin, fillColor);
         }
     }
 

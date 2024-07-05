@@ -4,11 +4,14 @@
   "gui.updater.confirm": "Confirm",
   "gui.updater.refuse": "Close the Game",
 
-  "gui.updater.active.title": "Updating",
+  "gui.updater.active.title": "Downloading",
   "gui.updater.active.preparing": "Preparing the update...",
-  "gui.updater.active.failed": "Update failed",
-  "gui.updater.active.done": "Update Completed, press continue to complete the installation. This will run the install script downloaded from the modpack.",
+  "gui.updater.active.failed": "Download failed",
+  "gui.updater.active.done": "Update Downloaded, press install to continue.",
 
-  "gui.updater.continue": "Continue",
-  "gui.updater.openModsFolder": "Open Mods Folder"
+  "gui.updater.install": "Install",
+  "gui.updater.openModsFolder": "Open Mods Folder",
+
+  "gui.updater.no_check.title": "Failed to check for updates",
+  "gui.updater.no_check.message": "Failed to check for updates, please try again later."
 }

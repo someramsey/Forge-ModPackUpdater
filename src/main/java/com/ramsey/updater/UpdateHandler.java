@@ -1,98 +1,66 @@
 package com.ramsey.updater;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonReader;
+import com.ramsey.updater.extractor.Extractor;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.loading.FMLPaths;
+import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Enumeration;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipException;
 
 public abstract class UpdateHandler {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private static PackInfo packInfo;
-    public static boolean requiresUpdate;
-
     private static UpdateScreen updateScreen;
-    private static Path destinationDir;
+
+    private static Path gameDir;
+    private static Path packagePath;
 
     public static void runInstallScript() {
-        long currentPid = ProcessHandle.current().pid();
-
-        String javaHome = System.getProperty("java.home");
-        String javaBinPath = javaHome + "/bin/java";
-
-        String currentJarPath = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-
-        String[] command = new String[]{
-            javaBinPath,
-            "-cp",
-            currentJarPath,
-            "com.ramsey.updater.PostUpdateTask",
-            Long.toString(currentPid),
-            destinationDir.resolve(packInfo.scriptPath()).toString()
-        };
-
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder(command);
-            processBuilder.start();
+            String installCommand = Config.installCommand;
+            long currentPid = ProcessHandle.current().pid();
 
-            Main.LOGGER.info("Install script started");
+            StringBuilder commandBuilder = new StringBuilder();
+
+            for (String commandPart : installCommand.split(" ")) {
+                commandBuilder.append(commandPart).append(" ");
+            }
+
+            commandBuilder.append(currentPid).append(" ");
+            commandBuilder.append(gameDir.toString()).append(" ");
+
+            ProcessBuilder processBuilder = new ProcessBuilder(commandBuilder.toString().split(" "));
+            processBuilder.directory(Config.installDir.toFile());
+
+            Process process = processBuilder.start();
+
+            if (process.isAlive()) {
+                Main.LOGGER.info("Install script started");
+                Minecraft.getInstance().stop();
+                return;
+            }
+
+            updateScreen.displayError("Failed to start install script");
+            Main.LOGGER.error("Failed to start install script");
         } catch (IOException exception) {
             Main.LOGGER.error("Failed to start install script", exception);
         }
     }
 
-    public static void fetchPackInfo() {
-        try {
-            URL url = new URL(Config.FetchUrl.get());
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-            connection.setConnectTimeout(Config.FetchTimeout.get());
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json");
-
-            InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
-
-            Gson gson = new Gson();
-            JsonReader jsonReader = new JsonReader(inputStreamReader);
-            JsonObject jsonObject = gson.fromJson(jsonReader, JsonObject.class);
-
-            String version = jsonObject.get("version").getAsString();
-            String downloadUrl = jsonObject.get("url").getAsString();
-            String installationScript = jsonObject.get("script").getAsString();
-
-            connection.disconnect();
-            inputStreamReader.close();
-            jsonReader.close();
-
-            UpdateHandler.packInfo = new PackInfo(version, downloadUrl, installationScript);
-            UpdateHandler.requiresUpdate = !Config.LatestVersion.get().equals(version);
-        } catch (IOException exception) {
-            Main.LOGGER.error("Failed to check for update", exception);
-        }
-    }
-
-    public static void installUpdate(UpdateScreen updateScreen) {
-        Path gameDir = FMLPaths.GAMEDIR.get();
-        UpdateHandler.destinationDir = gameDir.resolve(Config.RootDir.get());
+    public static void startUpdate(UpdateScreen updateScreen) {
         UpdateHandler.updateScreen = updateScreen;
 
         executor.submit(() -> {
@@ -100,41 +68,45 @@ public abstract class UpdateHandler {
                 prepare();
                 download();
                 extract();
+                backup();
                 updateScreen.updateComplete();
             } catch (Exception exception) {
+                if(exception instanceof ZipException) {
+                    onFail(new Exception("The downloaded file might be corrupted or be using a different compression format. Check mod config to change the compression format"));
+                    return;
+                }
+
                 onFail(exception);
             }
         });
     }
 
     private static void prepare() throws IOException {
-        if (!Files.exists(destinationDir)) {
-            Files.createDirectories(destinationDir);
+        UpdateHandler.gameDir = FMLPaths.GAMEDIR.get();
+        UpdateHandler.packagePath = Config.installDir.resolve(".package");
+
+        if (!Files.exists(Config.backupsDir)) {
+            Files.createDirectories(Config.backupsDir);
         }
 
-        try (Stream<Path> stream = Files.walk(destinationDir)) {
-            stream.filter(Files::isRegularFile).forEach(path -> {
-                try {
-                    Files.delete(path);
-                } catch (IOException exception) {
-                    Main.LOGGER.error("Failed to delete file: {}", path, exception);
-                }
-            });
+        if (!Files.exists(Config.installDir)) {
+            Files.createDirectories(Config.installDir);
+        } else {
+            FileUtils.cleanDirectory(Config.installDir.toFile());
         }
     }
 
     private static void download() throws IOException {
-        URL url = new URL(packInfo.url());
-        Path path = destinationDir.resolve(Config.PackagePath.get());
+        updateScreen.displayProgress("Downloading", 0);
 
+        URL url = new URL(UpdateChecker.packInfo.url());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         int fileSize = connection.getContentLength();
 
-
         try (
             InputStream in = connection.getInputStream();
-            OutputStream out = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            OutputStream out = Files.newOutputStream(packagePath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
         ) {
             byte[] buffer = new byte[1024];
 
@@ -154,37 +126,46 @@ public abstract class UpdateHandler {
     }
 
     private static void extract() throws IOException {
-        Path packagePath = destinationDir.resolve(Config.PackagePath.get());
-
         updateScreen.displayProgress("Extracting", 0);
 
-        try (ZipFile zipFile = new ZipFile(packagePath.toFile())) {
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        Extractor extractor = Config.extractorType.createExtractor();
 
-            int totalEntries = zipFile.size();
-            int entryIndex = 0;
-
-            while (entries.hasMoreElements()) {
-                entryIndex++;
-                ZipEntry entry = entries.nextElement();
-                Path entryPath = destinationDir.resolve(entry.getName());
-
-                if (entry.isDirectory()) {
-                    Files.createDirectories(entryPath);
-                } else {
-                    try (InputStream in = zipFile.getInputStream(entry)) {
-                        Files.copy(in, entryPath, StandardCopyOption.REPLACE_EXISTING);
-
-                        float progress = (float) entryIndex / totalEntries;
-                        updateScreen.displayProgress("Extracting (" + entryIndex + "/" + totalEntries + ")", progress);
-                    }
-                }
-            }
-        }
+        extractor.extract(packagePath, Config.installDir, (current, total) -> updateScreen.displayProgress(
+            "Extracting (" + current + "/" + total + ")",
+            (float) Math.max(current, 1) / total
+        ));
 
         updateScreen.displayProgress("Cleaning up", 1);
 
         Files.delete(packagePath);
+    }
+
+    private static void backup() throws IOException {
+        updateScreen.displayProgress("Backing up", 0);
+
+        String date = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss").format(new Date());
+
+        Path backupPath = Config.backupsDir.resolve("backup " + date);
+        Path modsPath = gameDir.resolve("mods");
+
+        Files.createDirectories(backupPath);
+        FileUtils.copyDirectory(modsPath.toFile(), backupPath.toFile());
+
+        updateScreen.displayProgress("Cleaning up old backups", 0.5f);
+
+        try (Stream<Path> backups = Files.list(Config.backupsDir)) {
+            List<Path> backupList = new ArrayList<>();
+
+            backups.forEach(backupList::add);
+            backupList.sort(Comparator.comparingLong(p -> p.toFile().lastModified()));
+
+            while (backupList.size() > Config.backupCount) {
+                FileUtils.deleteDirectory(backupList.get(0).toFile());
+                backupList.remove(0);
+            }
+        }
+
+        updateScreen.displayProgress("Backup Completed", 1f);
     }
 
     private static void onFail(Exception exception) {
