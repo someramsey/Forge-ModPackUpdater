@@ -1,6 +1,6 @@
 # Minecraft Modpack Updater
 
-This is a minecraft mod that automatically checks for new version of your modpack and updates it. It can be used with any kind of modpack, and you can create a custom installation script based on how the modpack is built. The mod does not host version info by itself it's a client sided mod, so you need to host it on a custom server and configure the mod to use it.
+This is a minecraft mod that automatically checks for new versions of your modpack and updates it. It can be used with any modpack, and you can create a custom installation script based on how the modpack is built. The mod does not host version info by itself it's a client sided mod, so you need to host it on a custom server and configure the mod to use it.
 
 ### Mod Installation and Configuration
 
@@ -25,7 +25,7 @@ _Though Idk about linux, havent tested it_ (～￣▽￣)～
 
 The mod does not host the modpack or the version info by itself they need to be hosted on a server. The modpack can be hosted on anywhere as long as it has direct download via a url. _(You can also use dropbox or google drive)_ Although the version info can also be stored as a file on these services you should probably use a http server.
 
-You should possibly put the modpack into an archive before uploading, supported archive formats are stated in the config file. (`Zip, BZip2, Gzip, Pack200, Z, Deflate, Snappy, LZ4`). Though `.rar` files are not supported.
+Put the modpack into an archive before uploading, supported archive formats are stated in the config file. (`Zip, BZip2, Gzip, Pack200, Z, Deflate, Snappy, LZ4`). Though `.rar` files are not supported.
 
 The version info is supposed to be a JSON response. It should contain the latest version of the modpack and the download link for the modpack itself. The JSON should look like this:
 
@@ -40,4 +40,4 @@ The modpack needs to have an install script that can be run after the download. 
 
 ### Safety and Misuse
 
-The mod allows the modpack author to run any script on your computer for moving the downloaded files. You should not use this mod with people that you do not trust or you should at least inspect the install script before running it.
+The mod allows the modpack author to change/swap any files in the modpack. This can be used to install malicious mods or scripts. Do not use this mod with people you do not trust.
