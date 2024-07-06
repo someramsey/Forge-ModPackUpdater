@@ -25,6 +25,7 @@ public class GuiHandler {
     @SubscribeEvent
     public static void onScreenOpen(ScreenEvent.Opening event) {
         if (!wasDisplayed && event.getNewScreen() instanceof TitleScreen) {
+            updateBrands();
             init(event);
             wasDisplayed = true;
         }
@@ -44,8 +45,6 @@ public class GuiHandler {
 
             List<String> brands = new ArrayList<>((List<String>) brandingsField.get(brandingControl));
 
-            brands.set(0, "§3" + Config.modpackName);
-
             if (UpdateChecker.updateState == UpdateChecker.UpdateState.FailedToFetch) {
                 brands.add("§cFailed to fetch update information");
             }
@@ -58,8 +57,6 @@ public class GuiHandler {
     }
 
     private static void init(ScreenEvent.Opening event) {
-        updateBrands();
-
         if (UpdateChecker.updateState == UpdateChecker.UpdateState.UpdateAvailable) {
             event.setNewScreen(new ConfirmScreen(GuiHandler::startUpdate,
                 Component.translatable("gui.updater.available.title"),
@@ -82,5 +79,4 @@ public class GuiHandler {
         minecraft.setScreen(updateScreen);
         UpdateHandler.startUpdate(updateScreen);
     }
-
 }

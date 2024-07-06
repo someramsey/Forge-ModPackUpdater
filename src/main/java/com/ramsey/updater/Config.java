@@ -13,9 +13,6 @@ import java.nio.file.Path;
 public class Config {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
-    private static final ForgeConfigSpec.ConfigValue<String> ModpackName = BUILDER.comment("The name of the modpack")
-        .define("modpack_name", "Some Modpack");
-
     private static final ForgeConfigSpec.ConfigValue<String> FetchUrl = BUILDER.comment("The url to fetch the update info, see README.md for more info")
         .define("fetch_url", "http://localhost:3000/version.json");
 
@@ -45,7 +42,6 @@ public class Config {
 
     public static final ForgeConfigSpec SPEC = BUILDER.build();
 
-    public static String modpackName;
     public static String fetchUrl;
     public static int fetchTimeout;
     public static ExtractorTypes extractorType;
@@ -58,7 +54,6 @@ public class Config {
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
-        modpackName = ModpackName.get();
         fetchUrl = FetchUrl.get();
         fetchTimeout = FetchTimeout.get();
         extractorType = ExtractorType.get();
