@@ -3,7 +3,9 @@
 @REM %1 is the process ID of minecraft
 @REM %2 is the path to the game directory
 
-set modsDir="%2\mods"
+
+set modsDir="%~2\mods"
+set pid=%~1
 
 echo Mods Directory: %modsDir%
 echo Waiting for process to end...
@@ -11,7 +13,7 @@ echo Waiting for process to end...
 @REM Wait for minecraft to close before moving the files because of the file lock
 
 :loop
-tasklist /fi "PID eq %1" | findstr "%1" > nul
+tasklist /fi "PID eq %pid%" | findstr "%pid%" > nul
 
 if errorlevel 1 ( goto end ) else (
     timeout /t 2 > nul
