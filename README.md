@@ -4,7 +4,7 @@ This is a minecraft mod that automatically checks for new versions of your modpa
 
 ### Mod Installation and Configuration
 
-- Download the mod from the [releases page]() and add it to your modpack.
+- Download the mod from the [releases page](https://github.com/someramsey/ModPackUpdater/releases) and add it to your modpack.
 - Download the [Sample Modpack](https://github.com/someramsey/ModPackUpdater/tree/SampleConfiguration) and configure it to your needs. You should host the modpack and the version info on a server. See [Hosting Modpack and Version Info](#hosting-modpack-and-version-info).
 - Run the game with the mod at least once to generate the config files.
 - Locate the config folder (Usually at `%APP_DATA%\.minecraft\versions\MODPACK_NAME\config`) and open the 
