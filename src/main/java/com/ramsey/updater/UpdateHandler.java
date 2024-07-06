@@ -40,7 +40,7 @@ public abstract class UpdateHandler {
             }
 
             commandBuilder.append(currentPid).append(" ");
-            commandBuilder.append(gameDir.toString()).append(" ");
+            commandBuilder.append("\"").append(gameDir.toString()).append("\"");
 
             ProcessBuilder processBuilder = new ProcessBuilder(commandBuilder.toString().split(" "));
             processBuilder.directory(Config.installDir.toFile());
