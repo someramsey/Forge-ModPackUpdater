@@ -44,8 +44,7 @@ The mod allows the modpack author to change/swap any files in the modpack. This 
 
 
 
-### Example
-
+### Usage
 
 https://github.com/user-attachments/assets/a93e7e91-e8db-4bb3-93f8-c76e43509940
 
