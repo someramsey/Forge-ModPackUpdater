@@ -42,4 +42,11 @@ The modpack needs to have an install script that can be run after the download. 
 
 The mod allows the modpack author to change/swap any files in the modpack. This can be used to install malicious mods or scripts. Do not use this mod with people you do not trust.
 
-![image](https://github.com/user-attachments/assets/a4d06476-77b9-4276-ab19-1ae7cd1e283b)
+
+
+### Example
+
+
+https://github.com/user-attachments/assets/a93e7e91-e8db-4bb3-93f8-c76e43509940
+
+
